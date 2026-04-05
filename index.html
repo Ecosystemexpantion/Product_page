@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EEM26 — Tech Stack Swipe File</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green: #00C853;
+  --dark-green: #004D20;
+  --deep: #050F08;
+  --card: #0A1A0F;
+  --card2: #0d1f12;
+  --gold: #FFD700;
+  --red: #FF3D3D;
+  --text: #E8F5EE;
+  --muted: #7A9E88;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--deep);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ── GRID TEXTURE ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0,200,83,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,200,83,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ══ LOCK SCREEN ══ */
+#lock-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--deep);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+#lock-screen::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0,200,83,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,200,83,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.lock-glow {
+  position: absolute; top: -80px; left: 50%; transform: translateX(-50%);
+  width: 400px; height: 400px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,200,83,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.lock-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 13px; letter-spacing: 5px;
+  color: var(--muted); margin-bottom: 28px;
+  position: relative;
+}
+.lock-icon {
+  width: 72px; height: 72px;
+  background: linear-gradient(135deg, var(--dark-green), #002d12);
+  border: 2px solid rgba(0,200,83,0.3);
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; margin: 0 auto 24px;
+  position: relative;
+  box-shadow: 0 0 40px rgba(0,200,83,0.15);
+}
+.lock-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(38px, 10vw, 64px);
+  line-height: 0.95;
+  background: linear-gradient(135deg, #fff 0%, var(--green) 60%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 6px; position: relative;
+}
+.lock-sub {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px; color: var(--gold);
+  letter-spacing: 4px; margin-bottom: 36px;
+  position: relative;
+}
+
+/* ── SETUP FLOW ── */
+.setup-step { display: none; width: 100%; max-width: 420px; position: relative; }
+.setup-step.active { display: block; }
+
+.step-label {
+  font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--green); font-weight: 700; margin-bottom: 8px;
+}
+.step-title {
+  font-family: 'Syne', sans-serif; font-size: 20px;
+  font-weight: 800; color: var(--text); margin-bottom: 6px;
+}
+.step-desc {
+  font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 20px;
+}
+
+.input-wrap { position: relative; margin-bottom: 14px; }
+.input-wrap input {
+  width: 100%;
+  background: rgba(0,200,83,0.06);
+  border: 1.5px solid rgba(0,200,83,0.25);
+  border-radius: 14px;
+  padding: 16px 50px 16px 18px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px; color: var(--text);
+  outline: none; transition: border-color 0.3s, box-shadow 0.3s;
+}
+.input-wrap input:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(0,200,83,0.12);
+}
+.input-wrap input::placeholder { color: var(--muted); }
+.eye-btn {
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--muted);
+  cursor: pointer; font-size: 18px; padding: 4px;
+}
+
+.btn-primary {
+  width: 100%;
+  background: linear-gradient(135deg, var(--green), #00a844);
+  color: #000; font-family: 'Syne', sans-serif;
+  font-weight: 800; font-size: 15px; letter-spacing: 0.5px;
+  text-transform: uppercase; padding: 18px;
+  border-radius: 100px; border: none; cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 0 30px rgba(0,200,83,0.3);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 50px rgba(0,200,83,0.5); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.error-msg {
+  color: var(--red); font-size: 12px; margin-top: 8px;
+  display: none; text-align: center;
+}
+.error-msg.show { display: block; }
+
+.strength-bar-wrap { margin-bottom: 14px; }
+.strength-bar-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+.strength-bar { height: 4px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
+.strength-fill { height: 100%; border-radius: 4px; width: 0; transition: width 0.4s, background 0.4s; }
+
+/* ── ACCESS GATE (returning users) ── */
+#access-gate { display: none; width: 100%; max-width: 420px; position: relative; }
+.gate-hint { font-size: 12px; color: var(--muted); text-align: center; margin-top: 14px; }
+.gate-hint a { color: var(--green); cursor: pointer; text-decoration: none; }
+
+/* ══ MAIN CONTENT ══ */
+#main-content { display: none; position: relative; z-index: 1; }
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(5,15,8,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0,200,83,0.12);
+  padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px; letter-spacing: 3px; color: var(--green);
+}
+.nav-badge {
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted); font-weight: 600;
+}
+.nav-lock {
+  background: rgba(0,200,83,0.1); border: 1px solid rgba(0,200,83,0.25);
+  color: var(--green); font-size: 11px; font-weight: 700;
+  letter-spacing: 1px; padding: 6px 14px; border-radius: 50px;
+  cursor: pointer; transition: all 0.2s;
+}
+.nav-lock:hover { background: rgba(0,200,83,0.2); }
+
+/* ── HERO ── */
+.hero {
+  text-align: center; padding: 80px 24px 60px;
+  background: radial-gradient(ellipse at 50% 0%, #003d1a 0%, transparent 65%);
+  position: relative;
+}
+.hero-tag {
+  font-family: 'Syne', sans-serif; font-size: 11px;
+  font-weight: 700; letter-spacing: 5px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 16px;
+}
+.hero h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(72px, 20vw, 140px); line-height: 0.85;
+  background: linear-gradient(135deg, #fff 0%, var(--green) 55%, #00ff88 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; margin-bottom: 6px;
+}
+.hero-sub {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(18px, 4vw, 32px);
+  color: var(--gold); letter-spacing: 5px; margin-bottom: 20px;
+}
+.hero-desc {
+  max-width: 540px; margin: 0 auto; font-size: 16px;
+  line-height: 1.75; color: #a8c8b4;
+}
+.hero-desc strong { color: var(--green); }
+
+/* ── SECTIONS ── */
+.section {
+  padding: 70px 24px; max-width: 800px; margin: 0 auto;
+}
+.section-tag {
+  font-family: 'Syne', sans-serif; font-size: 10px;
+  font-weight: 700; letter-spacing: 5px; text-transform: uppercase;
+  color: var(--green); margin-bottom: 10px;
+}
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(36px, 8vw, 60px); line-height: 0.95;
+  margin-bottom: 8px;
+}
+.section-title span { color: var(--gold); }
+.section-sub {
+  font-size: 15px; color: var(--gold); font-weight: 600;
+  margin-bottom: 28px; line-height: 1.5;
+}
+.section-divider {
+  height: 1px; background: linear-gradient(90deg, var(--green), transparent);
+  margin-bottom: 32px;
+}
+
+/* ── WELCOME CARD ── */
+.welcome-box {
+  background: rgba(0,200,83,0.04);
+  border: 1px solid rgba(0,200,83,0.15);
+  border-radius: 20px; padding: 28px;
+  margin-bottom: 20px;
+}
+.welcome-box p { font-size: 15px; line-height: 1.8; color: #c8e8d4; margin-bottom: 14px; }
+.welcome-box p:last-child { margin-bottom: 0; }
+.welcome-box strong { color: var(--text); font-weight: 700; }
+
+/* ── WHAT YOU OWN ── */
+.own-grid { display: grid; gap: 12px; }
+.own-card {
+  background: var(--card);
+  border: 1px solid rgba(0,200,83,0.15);
+  border-radius: 16px; padding: 20px 22px;
+  display: grid; grid-template-columns: auto 1fr;
+  gap: 16px; align-items: start;
+  transition: border-color 0.3s, transform 0.3s;
+}
+.own-card:hover { border-color: rgba(0,200,83,0.4); transform: translateX(4px); }
+.own-num {
+  font-family: 'Bebas Neue', sans-serif; font-size: 28px;
+  color: var(--green); line-height: 1; min-width: 28px;
+}
+.own-name {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 14px; color: var(--green);
+  letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;
+}
+.own-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+/* ── ACCESS ── */
+.access-section {
+  padding: 70px 24px;
+  background: linear-gradient(180deg, #030a05, var(--card));
+  border-top: 1px solid rgba(255,215,0,0.1);
+  border-bottom: 1px solid rgba(255,215,0,0.1);
+}
+.access-inner { max-width: 700px; margin: 0 auto; }
+
+.link-block { margin-bottom: 20px; }
+.link-label {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
+  color: #000; padding: 10px 0; text-align: center;
+  border-radius: 10px 10px 0 0; margin-bottom: 0;
+}
+.link-label.green { background: var(--green); }
+.link-label.gold { background: var(--gold); }
+
+.link-url {
+  display: block;
+  background: var(--card2);
+  border: 1px solid rgba(0,200,83,0.2);
+  border-top: none;
+  border-radius: 0 0 14px 14px;
+  padding: 16px 20px;
+  text-align: center;
+  font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: 15px; color: var(--green);
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+  word-break: break-all;
+}
+.link-url.gold-link { color: var(--gold); border-color: rgba(255,215,0,0.2); }
+.link-url:hover { background: rgba(0,200,83,0.08); }
+
+.contact-box {
+  background: var(--card);
+  border: 1px solid rgba(0,200,83,0.15);
+  border-radius: 16px; padding: 22px 24px; margin-top: 20px;
+}
+.contact-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.contact-row:last-child { border-bottom: none; padding-bottom: 0; }
+.contact-label { font-size: 12px; color: var(--muted); min-width: 100px; font-weight: 600; }
+.contact-val {
+  font-size: 13px; color: var(--green); font-weight: 700;
+  text-decoration: none; word-break: break-all;
+}
+.contact-val:hover { text-decoration: underline; }
+
+/* ── INSTRUCTIONS ── */
+.steps-grid { display: grid; gap: 14px; }
+.step-card {
+  background: var(--card);
+  border: 1px solid rgba(0,200,83,0.12);
+  border-radius: 18px; padding: 24px;
+  display: grid; grid-template-columns: 56px 1fr; gap: 18px;
+  align-items: start; transition: border-color 0.3s;
+}
+.step-card:hover { border-color: rgba(0,200,83,0.35); }
+.step-num {
+  font-family: 'Bebas Neue', sans-serif; font-size: 52px;
+  color: var(--green); line-height: 1; text-align: center;
+}
+.step-name {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 15px; color: var(--text); margin-bottom: 6px;
+}
+.step-body { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+/* ── COACHES ── */
+.coaches-section {
+  padding: 70px 24px;
+  background: linear-gradient(180deg, var(--deep), #030a05);
+}
+.coaches-inner { max-width: 800px; margin: 0 auto; }
+.coaches-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px; margin-top: 32px;
+}
+@media (max-width: 500px) { .coaches-grid { grid-template-columns: 1fr; } }
+
+.coach-card {
+  background: var(--card);
+  border: 1px solid rgba(0,200,83,0.15);
+  border-radius: 20px; padding: 28px 22px;
+  text-align: center;
+  transition: border-color 0.3s, transform 0.3s;
+  text-decoration: none;
+  display: block;
+}
+.coach-card:hover { border-color: var(--green); transform: translateY(-4px); }
+.coach-avatar {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--dark-green), var(--green));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: #000;
+  margin: 0 auto 14px; border: 2px solid rgba(0,200,83,0.4);
+}
+.coach-role {
+  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--green); font-weight: 700; margin-bottom: 6px;
+}
+.coach-name {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 15px; color: var(--text); margin-bottom: 8px;
+}
+.coach-desc { font-size: 12px; color: var(--muted); line-height: 1.55; margin-bottom: 14px; }
+.coach-dm {
+  display: inline-block;
+  background: rgba(0,200,83,0.1);
+  border: 1px solid rgba(0,200,83,0.3);
+  color: var(--green); font-size: 11px; font-weight: 700;
+  padding: 7px 16px; border-radius: 50px; letter-spacing: 0.5px;
+}
+
+/* ── WARNINGS ── */
+.warnings-section {
+  padding: 60px 24px;
+  background: rgba(255,61,61,0.03);
+  border-top: 1px solid rgba(255,61,61,0.15);
+}
+.warnings-inner { max-width: 700px; margin: 0 auto; }
+.warning-title {
+  font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px, 8vw, 56px);
+  color: var(--red); text-align: center; margin-bottom: 28px;
+}
+.warn-list { display: grid; gap: 12px; margin-bottom: 40px; }
+.warn-item {
+  background: rgba(255,61,61,0.05);
+  border: 1px solid rgba(255,61,61,0.2);
+  border-radius: 14px; padding: 18px 20px;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.warn-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.warn-text { font-size: 14px; color: var(--text); line-height: 1.6; }
+.warn-text strong { color: var(--red); }
+
+.closing-box {
+  background: var(--card);
+  border: 1px solid rgba(0,200,83,0.15);
+  border-radius: 20px; padding: 36px 28px; text-align: center;
+}
+.closing-box p { font-size: 15px; color: #a8c8b4; line-height: 1.75; margin-bottom: 8px; }
+.closing-box .bold { color: var(--text); font-weight: 700; }
+.closing-gold {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: 17px; color: var(--gold);
+  margin-top: 20px; line-height: 1.5;
+}
+.closing-sig {
+  font-size: 13px; color: var(--muted); margin-top: 16px;
+}
+
+/* ── FOOTER ── */
+footer {
+  text-align: center; padding: 28px 24px;
+  border-top: 1px solid rgba(0,200,83,0.08);
+  font-size: 12px; color: var(--muted);
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease forwards; }
+.fade-up-2 { animation: fadeUp 0.6s 0.1s ease forwards; opacity: 0; }
+.fade-up-3 { animation: fadeUp 0.6s 0.2s ease forwards; opacity: 0; }
+
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,200,83,0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(0,200,83,0); }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ LOCK SCREEN ══════════════ -->
+<div id="lock-screen">
+  <div class="lock-glow"></div>
+
+  <div class="lock-logo">ECOSYSTEM EXPANSION MODEL · EEM26</div>
+  <div class="lock-icon">🔐</div>
+  <div class="lock-title">TECH<br>STACK</div>
+  <div class="lock-sub">— THE SWIPE FILE —</div>
+
+  <!-- STEP 1: New user setup -->
+  <div class="setup-step active" id="step-check">
+    <!-- JS will redirect to correct step -->
+  </div>
+
+  <!-- STEP 2: Create password -->
+  <div class="setup-step" id="step-create">
+    <div class="step-label">First time here?</div>
+    <div class="step-title">Create Your Access Password</div>
+    <div class="step-desc">This password is personal to you. You'll use it every time you access your Tech Stack. Keep it safe.</div>
+
+    <div class="input-wrap">
+      <input type="password" id="create-pw" placeholder="Create a password" autocomplete="new-password">
+      <button class="eye-btn" onclick="toggleEye('create-pw', this)">👁</button>
+    </div>
+
+    <div class="strength-bar-wrap">
+      <div class="strength-bar-label" id="strength-label">Password strength</div>
+      <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+    </div>
+
+    <div class="input-wrap">
+      <input type="password" id="confirm-pw" placeholder="Confirm your password" autocomplete="new-password">
+      <button class="eye-btn" onclick="toggleEye('confirm-pw', this)">👁</button>
+    </div>
+
+    <div class="error-msg" id="create-err">Passwords do not match. Try again.</div>
+    <button class="btn-primary" onclick="createPassword()">Set My Password & Enter →</button>
+  </div>
+
+  <!-- STEP 3: Returning user login -->
+  <div class="setup-step" id="step-login">
+    <div class="step-label">Welcome back</div>
+    <div class="step-title">Enter Your Password</div>
+    <div class="step-desc">Access your Tech Stack Swipe File below.</div>
+
+    <div class="input-wrap">
+      <input type="password" id="login-pw" placeholder="Your password" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter') login()">
+      <button class="eye-btn" onclick="toggleEye('login-pw', this)">👁</button>
+    </div>
+
+    <div class="error-msg" id="login-err">Incorrect password. Try again.</div>
+    <button class="btn-primary" onclick="login()">Access My Tech Stack →</button>
+    <div class="gate-hint" style="margin-top:14px;">
+      New device? <a onclick="resetPassword()">Reset password</a>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════ MAIN CONTENT ══════════════ -->
+<div id="main-content">
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">EEM26</div>
+    <div class="nav-badge">Tech Stack · Swipe File</div>
+    <button class="nav-lock" onclick="lockScreen()">🔒 Lock</button>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-tag">EEM26 Presents</div>
+    <h1>TECH<br>STACK</h1>
+    <div class="hero-sub">— The Swipe File —</div>
+    <p class="hero-desc">
+      We don't just give you tools — <strong>we set it up for you.</strong>
+      AI systems, premium software, and <strong>4 personal coaches</strong>
+      who work alongside you until your digital business is running and making money.
+    </p>
+  </div>
+
+  <!-- ── WELCOME ── -->
+  <div class="section">
+    <div class="section-tag">Welcome</div>
+    <div class="section-title">Welcome to <span>EEM26.</span></div>
+    <div class="section-sub">You just made one of the best decisions of your digital business journey.</div>
+    <div class="section-divider"></div>
+
+    <div class="welcome-box">
+      <p>Congratulations on getting your hands on the Tech Stack Swipe File. Inside this document you will find everything you need to access your tools, join your support channels, meet your personal coaches, and begin your 4-day setup process.</p>
+      <p><strong>Please read every section carefully.</strong> The instructions here are not optional — they are the difference between results and frustration. Everything works when you follow the process.</p>
+    </div>
+  </div>
+
+  <!-- ── WHAT YOU NOW OWN ── -->
+  <div class="section" style="padding-top:0;">
+    <div class="section-tag">What You Now Own</div>
+    <div class="section-title">Your Complete<br><span>Tech Stack</span></div>
+    <div class="section-divider"></div>
+
+    <div class="own-grid">
+      <div class="own-card">
+        <div class="own-num">■</div>
+        <div>
+          <div class="own-name">SRE Setup</div>
+          <div class="own-desc">Smart Reply Engine — AI systems that automate your customer replies and follow-ups so you never miss a sale. We configure this for you.</div>
+        </div>
+      </div>
+      <div class="own-card">
+        <div class="own-num">■</div>
+        <div>
+          <div class="own-name">AAM Setup</div>
+          <div class="own-desc">AI Acquisition Model — automated systems that attract, capture and convert leads into paying customers without you lifting a finger.</div>
+        </div>
+      </div>
+      <div class="own-card">
+        <div class="own-num">■</div>
+        <div>
+          <div class="own-name">Integration Setup</div>
+          <div class="own-desc">Complete AI tools and step-by-step guidance to connect all your systems. Our team handles the heavy lifting on our end.</div>
+        </div>
+      </div>
+      <div class="own-card">
+        <div class="own-num">■</div>
+        <div>
+          <div class="own-name">Premium Apps</div>
+          <div class="own-desc">Exclusive premium software most people pay monthly for — yours permanently inside the swipe file.</div>
+        </div>
+      </div>
+      <div class="own-card">
+        <div class="own-num">■</div>
+        <div>
+          <div class="own-name">Weekly Stacks</div>
+          <div class="own-desc">Ready-made digital product stacks you can resell immediately. Products people buy — you just distribute and collect the money.</div>
+        </div>
+      </div>
+      <div class="own-card">
+        <div class="own-num">■</div>
+        <div>
+          <div class="own-name">Done-With-You Setup</div>
+          <div class="own-desc">Nobody else offers this. Our team handles everything only we can do on our end. You only do what requires your personal phone.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── YOUR ACCESS ── -->
+  <div class="access-section">
+    <div class="access-inner">
+      <div class="section-tag">Your Access</div>
+      <div class="section-title">Join Your<br><span>Groups Now.</span></div>
+      <div class="section-sub">Click the links below to access your Tech Stack and Support Group.</div>
+      <div class="section-divider"></div>
+
+      <div class="link-block">
+        <div class="link-label green">TECH STACK — MAIN GROUP</div>
+        <a class="link-url" href="https://t.me/+3bH4IQ3Xq1BjNWU0" target="_blank">
+          https://t.me/+3bH4IQ3Xq1BjNWU0
+        </a>
+      </div>
+
+      <div class="link-block">
+        <div class="link-label gold">SUPPORT GROUP — JOIN HERE</div>
+        <a class="link-url gold-link" href="https://t.me/+CC3tKG-cv0NkMDRk" target="_blank">
+          https://t.me/+CC3tKG-cv0NkMDRk
+        </a>
+      </div>
+
+      <div class="contact-box">
+        <div class="contact-row">
+          <div class="contact-label">Coach Victor</div>
+          <a class="contact-val" href="https://t.me/Coac_victor" target="_blank">@Coac_victor — Tap to DM on Telegram</a>
+        </div>
+        <div class="contact-row">
+          <div class="contact-label">Support Email</div>
+          <a class="contact-val" href="mailto:Coachvictor80@gmail.com">Coachvictor80@gmail.com</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── INSTRUCTIONS ── -->
+  <div class="section">
+    <div class="section-tag">Your Instructions</div>
+    <div class="section-title">Read This<br><span>Carefully.</span></div>
+    <div class="section-sub">These are not suggestions. Follow every step exactly as written.</div>
+    <div class="section-divider"></div>
+
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div>
+          <div class="step-name">Attend The Live Training</div>
+          <div class="step-body">Tomorrow by 8:00 PM, Coach Victor will be holding a live call on Telegram. You MUST be present. During this live training, a personal coach will be assigned to you. Your coach will guide your complete 4-day setup process from start to finish. Missing this training will delay your entire setup.</div>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div>
+          <div class="step-name">Explore Your Tech Stack</div>
+          <div class="step-body">Inside the Tech Stack group you will find premium tools, AI software, and valuable content. Some of the AI tools you need are already inside — take time to go through everything. During the live training, Coach Victor will show you exactly where to find the most important tools.</div>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div>
+          <div class="step-name">Be Available For Your Coach</div>
+          <div class="step-body">Once your personal coach is assigned, make yourself available immediately. Agree on a convenient time for your setup session. Your coach cannot access your phone remotely — everything will be done directly on your device. Your physical presence during setup is mandatory.</div>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div>
+          <div class="step-name">Complete All 4 Stages</div>
+          <div class="step-body">Your setup runs across 4 days and has 4 stages. Do NOT skip any stage unless your personal coach specifically instructs you to. Every stage is connected to the next. Skipping stages means your system will not work properly. Follow your coach's instructions exactly.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── COACHES ── -->
+  <div class="coaches-section">
+    <div class="coaches-inner">
+      <div class="section-tag">Your Team</div>
+      <div class="section-title">Your 4 Personal<br><span>Coaches.</span></div>
+      <div class="section-sub">These are the real people standing behind your success.</div>
+      <div class="section-divider"></div>
+
+      <div class="coaches-grid">
+        <a class="coach-card" href="https://t.me/Coac_victor" target="_blank">
+          <div class="coach-avatar">V</div>
+          <div class="coach-role">Lead Coach</div>
+          <div class="coach-name">Coach Victor</div>
+          <div class="coach-desc">EEM26 founder. Runs the live training, oversees your full setup and is your direct line to results.</div>
+          <span class="coach-dm">📲 DM on Telegram</span>
+        </a>
+        <a class="coach-card" href="https://t.me/+2349132043704" target="_blank">
+          <div class="coach-avatar">M</div>
+          <div class="coach-role">Coach 2</div>
+          <div class="coach-name">Michael Akazua</div>
+          <div class="coach-desc">Your SRE and AAM specialist. Configures and activates your automated reply and acquisition systems.</div>
+          <span class="coach-dm">📲 DM on Telegram</span>
+        </a>
+        <a class="coach-card" href="https://t.me/+2349019040203" target="_blank">
+          <div class="coach-avatar">E</div>
+          <div class="coach-role">Coach 3</div>
+          <div class="coach-name">Ego</div>
+          <div class="coach-desc">Integration expert. Connects all your systems together so everything runs as one smooth machine.</div>
+          <span class="coach-dm">📲 DM on Telegram</span>
+        </a>
+        <a class="coach-card" href="https://t.me/+2348138915717" target="_blank">
+          <div class="coach-avatar">T</div>
+          <div class="coach-role">Coach 4</div>
+          <div class="coach-name">Tochi Okpalauwaeke</div>
+          <div class="coach-desc">Support specialist. Ensures every part of your setup is complete and generating results before signing off.</div>
+          <span class="coach-dm">📲 DM on Telegram</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CRITICAL WARNINGS ── -->
+  <div class="warnings-section">
+    <div class="warnings-inner">
+      <div class="warning-title">⚠ CRITICAL WARNINGS</div>
+      <div class="warn-list">
+        <div class="warn-item">
+          <div class="warn-icon">🚫</div>
+          <div class="warn-text"><strong>DO NOT</strong> miss the live training tomorrow at 8:00 PM.</div>
+        </div>
+        <div class="warn-item">
+          <div class="warn-icon">🚫</div>
+          <div class="warn-text"><strong>DO NOT</strong> skip any of the 4 setup stages unless your personal coach specifically tells you to.</div>
+        </div>
+        <div class="warn-item">
+          <div class="warn-icon">🚫</div>
+          <div class="warn-text"><strong>DO NOT</strong> share your Tech Stack links with anyone who has not paid.</div>
+        </div>
+        <div class="warn-item">
+          <div class="warn-icon">✅</div>
+          <div class="warn-text">Results are guaranteed <strong>only</strong> when you follow instructions completely.</div>
+        </div>
+      </div>
+
+      <div class="closing-box">
+        <p>You already have the Tech Stack. Everything you need is inside it.</p>
+        <p>Once your setup is completed and you follow the process,</p>
+        <p class="bold">we are confident the system will work for you.</p>
+        <div class="closing-gold">
+          Thank you for joining EEM26.<br>
+          Welcome to the Ecosystem. Let's grow together.
+        </div>
+        <div class="closing-sig">— Coach Victor | Ecosystem Expansion Model (EEM26) —</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>© 2025 Ecosystem Expansion Model (EEM26) · All rights reserved · <strong style="color:var(--green)">CONFIDENTIAL — FOR AUTHORIZED BUYERS ONLY</strong></footer>
+
+</div>
+
+<script>
+// ── PASSWORD SYSTEM ──
+// Each user creates their own password, stored in localStorage on their device.
+// Password is hashed before storage for basic security.
+
+const STORAGE_KEY = 'eem26_pw_hash';
+
+async function hashPassword(pw) {
+  const enc = new TextEncoder().encode(pw + 'eem26_salt_2025');
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function toggleEye(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁'; }
+}
+
+function showStep(id) {
+  document.querySelectorAll('.setup-step').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// Check on load whether password exists
+window.addEventListener('load', () => {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    showStep('step-login');
+  } else {
+    showStep('step-create');
+  }
+});
+
+// Strength meter
+document.addEventListener('input', function(e) {
+  if (e.target.id !== 'create-pw') return;
+  const pw = e.target.value;
+  let score = 0;
+  if (pw.length >= 6) score++;
+  if (pw.length >= 10) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+  const fill = document.getElementById('strength-fill');
+  const label = document.getElementById('strength-label');
+  const colors = ['#FF3D3D','#FF8C00','#FFD700','#00C853','#00ff88'];
+  const labels = ['Too weak','Weak','Fair','Strong','Very strong'];
+  fill.style.width = (score * 20) + '%';
+  fill.style.background = colors[score - 1] || '#333';
+  label.textContent = labels[score - 1] || 'Password strength';
+});
+
+async function createPassword() {
+  const pw = document.getElementById('create-pw').value;
+  const confirm = document.getElementById('confirm-pw').value;
+  const err = document.getElementById('create-err');
+
+  if (pw.length < 6) { err.textContent = 'Password must be at least 6 characters.'; err.classList.add('show'); return; }
+  if (pw !== confirm) { err.textContent = 'Passwords do not match. Try again.'; err.classList.add('show'); return; }
+
+  err.classList.remove('show');
+  const hash = await hashPassword(pw);
+  localStorage.setItem(STORAGE_KEY, hash);
+  unlock();
+}
+
+async function login() {
+  const pw = document.getElementById('login-pw').value;
+  const err = document.getElementById('login-err');
+  const stored = localStorage.getItem(STORAGE_KEY);
+  const hash = await hashPassword(pw);
+
+  if (hash === stored) {
+    err.classList.remove('show');
+    unlock();
+  } else {
+    err.classList.add('show');
+    document.getElementById('login-pw').value = '';
+  }
+}
+
+function unlock() {
+  document.getElementById('lock-screen').style.display = 'none';
+  document.getElementById('main-content').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+function lockScreen() {
+  document.getElementById('lock-screen').style.display = 'flex';
+  document.getElementById('main-content').style.display = 'none';
+  showStep('step-login');
+  document.getElementById('login-pw').value = '';
+}
+
+function resetPassword() {
+  if (confirm('This will delete your saved password. You will need to create a new one.')) {
+    localStorage.removeItem(STORAGE_KEY);
+    showStep('step-create');
+    document.getElementById('create-pw').value = '';
+    document.getElementById('confirm-pw').value = '';
+  }
+}
+</script>
+</body>
+</html>
