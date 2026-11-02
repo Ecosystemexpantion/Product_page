@@ -250,6 +250,33 @@ details.alt[open] summary{margin-bottom:12px}
 .access-note{margin-top:12px;color:var(--label3);font-size:.8rem}
 
 .in-welcome #app,.in-app #welcome,.in-welcome #guideBtn,.in-welcome #logoutBtn,.in-welcome #liveBadge{display:none!important}
+/* Your Tech Stack: unpacked on screen, then marked as the agents use each part */
+.stack{padding:20px 0 6px;margin-bottom:16px;overflow:hidden}
+.stack-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:0 20px}
+.stack-top h2{font-size:1.06rem;font-weight:650;letter-spacing:-.01em}
+.stack-top p{color:var(--label2);font-size:.86rem;margin-top:3px}
+.stack-count{font:700 .76rem "JetBrains Mono",monospace;color:var(--accent);background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:999px;padding:4px 10px;white-space:nowrap}
+.stack-count.full{color:var(--green);background:var(--green-soft);border-color:var(--green-line)}
+.stack-bar{height:4px;margin:14px 20px 4px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
+.stack-bar i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#5B8CFF,#3CCB7F);transition:width .35s ease}
+.stack-list{display:grid}
+.sitem{display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center;padding:10px 20px;position:relative;animation:sin .35s ease both}
+.sitem+.sitem{border-top:1px solid var(--edge)}
+@keyframes sin{from{opacity:0;transform:translateY(6px)}}
+.sitem .si{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 14%,transparent);border:1px solid color-mix(in srgb,var(--c) 30%,transparent)}
+.sitem b{display:block;font-size:.9rem;font-weight:600}
+.sitem small{display:block;color:var(--label3);font-size:.78rem;line-height:1.35;margin-top:1px}
+.sitem .ss{font:700 .62rem Inter,system-ui,sans-serif;letter-spacing:.06em;padding:3px 8px;border-radius:999px;white-space:nowrap;color:var(--label3);background:var(--muted)}
+.sitem .pb{position:absolute;left:66px;right:20px;bottom:0;height:2px;overflow:hidden}
+.sitem .pb i{display:block;height:100%;width:0;background:var(--accent);transition:width .7s ease}
+.sitem.ready .pb i,.sitem.use .pb i,.sitem.used .pb i,.sitem.active .pb i{opacity:0}
+.sitem.ready .ss,.sitem.active .ss{color:var(--accent);background:var(--accent-soft)}
+.sitem.use .ss{color:var(--orange);background:var(--amber-soft);animation:blink 1.2s infinite}
+.sitem.use{background:linear-gradient(90deg,rgba(245,181,68,.06),transparent 60%)}
+.sitem.used .ss{color:var(--green);background:var(--green-soft)}
+.stack-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px;padding:10px 20px 6px;border-top:1px solid var(--edge)}
+.stack-foot span{color:var(--label3);font-size:.8rem}
+.stack-foot button{background:none;border:0;color:var(--accent);font:600 .84rem Inter,system-ui,sans-serif;cursor:pointer;padding:6px 0;white-space:nowrap}
 #authPanel{margin-top:22px}
 .hidden{display:none!important}
 .foot{margin-top:28px;text-align:center;color:var(--label3);font-size:.78rem;line-height:1.6}
@@ -353,6 +380,13 @@ details.alt[open] summary{margin-bottom:12px}
   </section>
 
   <div class="seg glass hidden" id="journey"></div>
+
+  <section class="stack glass hidden" id="stackPanel">
+    <div class="stack-top"><div><h2 id="stackTitle">Your Tech Stack</h2><p id="stackSub"></p></div><span class="stack-count" id="stackCount">0 / 21</span></div>
+    <div class="stack-bar"><i id="stackBar"></i></div>
+    <div class="stack-list" id="stackList"></div>
+    <div class="stack-foot"><span id="stackNote"></span><button id="stackBtn"></button></div>
+  </section>
 
   <section class="panel glass hidden" id="buildPanel">
     <h2>Day 1 · Your AI sales assistant</h2>
@@ -496,6 +530,8 @@ details.alt[open] summary{margin-bottom:12px}
 <script>
 (function () {
   var API = "https://leqizarzgfpiriknpnxw.supabase.co/functions/v1/amara-web";
+  // The Tech Stack buyers' page: students own the Tech Stack from the start.
+  var BUYER_PAGE = true;
   // Tech Stack buyers' page: Day 2 opens by itself once Day 1 is done (no payment screenshot).
   // state "" = not asked yet, "pending" = asked, "off" = the server doesn't offer it, so the payment step shows.
   var unlock = { state: "", at: 0 };
@@ -1358,6 +1394,7 @@ details.alt[open] summary{margin-bottom:12px}
   async function play(run, tk) {
     show.playing = true; show.finished = false;
     var kind = kindOf(run);
+    stackUse(kind);
     tempo = TEMPO[kind] || 1;
     var roster = ROSTERS[kind] || ROSTERS.sre;
     var fromStack = run.kind === "pages" || run.kind === "sre";
@@ -1452,6 +1489,7 @@ details.alt[open] summary{margin-bottom:12px}
   function finale(run, ok, quiet) {
     if (data && data.run && data.run.id === run.id) run = data.run;
     show.playing = false; show.finished = true;
+    stackUse(null);
     var last = latestOf(run, "amara");
     vis("finBtn", false); vis("finBtn2", false);
     if (!ok) {
@@ -1644,17 +1682,29 @@ details.alt[open] summary{margin-bottom:12px}
     if (pendingSince && (busy || Date.now() - pendingSince > 30000)) pendingSince = 0;
     var waiting = !!pendingSince;
 
+    // Tech Stack: unpacked once per account (in this browser) as soon as the student owns it, before that day's setup.
+    var owns = ownsStack(d);
+    stack.key = "eem26-stack-" + ((d.account && d.account.email) || d.fullName || "student");
+    if (owns && stack.state === "") {
+      var unpacked = false;
+      try { unpacked = !!localStorage.getItem(stack.key); } catch (e) {}
+      if (unpacked) stack.state = "done"; else if (!busy) unpackStack();
+    }
+    vis("stackPanel", owns && stack.state !== "");
+    renderStack();
+    var unpacking = stack.state === "playing";
+
     // Buyers skip the payment gate: as soon as Day 1 is done (and its build has finished playing), ask for Day 2.
     if (d.phase !== "bot_live" && unlock.state === "pending") unlock.state = "";
     if (unlock.state === "pending" && Date.now() - unlock.at > 20000) unlock.state = "";
     var buyerWait = d.phase === "bot_live" && buyerDay2();
     if (buyerWait && !busy && unlock.state === "") buyerUnlock();
     vis("accessPanel", true);
-    vis("buildPanel", d.phase === "build_bot" && !busy);
-    vis("pagesPanel", (d.phase === "build_pages") && !busy);
+    vis("buildPanel", d.phase === "build_bot" && !busy && !unpacking);
+    vis("pagesPanel", (d.phase === "build_pages") && !busy && !unpacking);
     if (d.githubConnectUrl) $("ghBtn").href = d.githubConnectUrl;
-    vis("day3Panel", d.phase === "day3_start" && !busy);
-    vis("testPanel", !!d.canTestSre && !busy && !waiting);
+    vis("day3Panel", d.phase === "day3_start" && !busy && !unpacking);
+    vis("testPanel", !!d.canTestSre && !busy && !waiting && !unpacking);
 
     var chat = d.sre && d.sre.chatUrl;
     vis("srePanel", !!chat && !busy);
@@ -1667,7 +1717,7 @@ details.alt[open] summary{margin-bottom:12px}
       renderLeads(d.leads);
     }
 
-    var up = d.upload && !busy && !waiting && !(buyerWait && d.upload.label === "Payment screenshot") ? UPLOAD_STEPS[d.upload.label] : null;
+    var up = d.upload && !busy && !waiting && !unpacking && !(buyerWait && d.upload.label === "Payment screenshot") ? UPLOAD_STEPS[d.upload.label] : null;
     vis("uploadPanel", !!up);
     if (up) {
       $("upTitle").textContent = up[0];
@@ -1688,6 +1738,9 @@ details.alt[open] summary{margin-bottom:12px}
     } else if (waiting) {
       $("hello").innerHTML = "Hi " + name + " — <span>agents incoming</span>";
       $("status").textContent = "Got it — the agents are starting…";
+    } else if (unpacking) {
+      $("hello").innerHTML = "Hi " + name + " — <span>unpacking your Tech Stack</span>";
+      $("status").textContent = "Here is every tool and resource you own. Your AI agents use them to build your business — you'll watch each one in action.";
     } else if (d.phase === "build_bot") {
       $("hello").innerHTML = "Hi " + name + " — <span>let's build your AI sales assistant</span>";
       $("status").textContent = "Name your assistant, tap Build, and watch 7 AI agents set it up for you live.";
@@ -1732,6 +1785,115 @@ details.alt[open] summary{margin-bottom:12px}
       schedule(1500);
     }).catch(function () { schedule(4000); });
   }
+
+  // ── Your Tech Stack ─────────────────────────────────────────────────────────
+  // The real parts of the Tech Stack, unpacked on screen once a student owns it, then marked
+  // "In use" while the agents work with them and "Used" once that day's build is done.
+  // Nothing is installed on the student's phone; every item here is used by the agents for them.
+  function S(icon, name, does, day, color, kinds, extra) { var o = { i: icon, n: name, d: does, day: day, c: color, kinds: kinds }; for (var k in extra) o[k] = extra[k]; return o; }
+  var STACK = [
+    S("bot", "Smart Reply Engine (SRE)", "Your AI sales assistant that replies and sells 24/7", 1, C.blue, ["sre", "sreWeb"]),
+    S("brain-circuit", "Claude AI by Anthropic", "The language model behind your assistant's replies", 1, C.purple, ["sre", "sreWeb"]),
+    S("database", "Sales knowledge base", "Real student results and objection handling", 1, C.indigo, ["sre", "sreWeb"]),
+    S("activity", "Lead tracker", "Follows every chat: new, registered, bought", 1, C.mint, ["sre", "sreWeb"]),
+    S("messages-square", "Web chat page", "Your assistant's own link — works on any phone", 1, C.teal, ["sreWeb"], { only: "web" }),
+    S("send", "Telegram Bot API", "Optional: your assistant on Telegram too", 1, C.blue, ["sre"], { only: "telegram" }),
+    S("layout-template", "Landing page template", "The sales page your agents build from", 2, C.purple, ["pages"]),
+    S("gem", "Premium page template", "Your high-ticket premium sales page", 2, C.pink, ["pages"]),
+    S("pen-tool", "Liquid Glass design", "The look and feel of both pages", 2, C.teal, ["pages"]),
+    S("camera", "Student results and proof media", "Real screenshots and videos for your pages", 2, C.orange, ["pages"]),
+    S("pen-line", "Sales copy", "The selling text on both pages", 2, C.blue, ["pages"]),
+    S("hourglass", "Countdown and slot tracker", "Live urgency on your pages", 2, C.red, ["pages"]),
+    S("link", "Payment link wiring", "Points every buy button to your payment link", 2, C.green, ["pages"]),
+    S("git-fork", "GitHub", "Keeps your pages' code in your own account", 2, C.indigo, ["pages"]),
+    S("globe", "GitHub Pages hosting", "Publishes your pages worldwide with HTTPS", 2, C.teal, ["pages"]),
+    S("scan-eye", "Google Gemini vision", "Reads and checks every screenshot you upload", 3, C.blue, ["check", "certificate"], { anyDay: true }),
+    S("package", "Selar", "Your own storefront for digital products", 3, C.green, ["check"]),
+    S("badge-check", "Payhip", "Earns you commission on every sale through your link", 3, C.orange, ["check"]),
+    S("graduation-cap", "Certificate generator", "Your signed PDF Certificate of Completion", 4, C.purple, ["certificate"]),
+    S("message-square-text", "Amara, your AI setup coach", "Guides you through every step", 0, C.pink, []),
+    S("shield-check", "Your coaching team", "Real coaches who help until you're selling", 0, C.yellow, [])
+  ];
+  var STACK_LABEL = { loading: "UNPACKING", ready: "READY", active: "ACTIVE", use: "IN USE", used: "USED ✓" };
+  var stack = { state: "", token: 0, open: false, use: null, key: "", html: "" };
+
+  function ownsStack(d) { return BUYER_PAGE || d.day >= 2 || d.phase === "graduated"; }
+  function doneDay(d) {
+    if (d.phase === "graduated") return 4;
+    if (d.phase === "bot_live") return 1;
+    if (d.phase === "pages_live") return 2;
+    if (d.phase === "day3_done") return 3;
+    return Math.max(0, (d.day || 1) - 1);
+  }
+  function stackState(it, d) {
+    if (stack.use && it.kinds.indexOf(stack.use) >= 0 && (stack.use !== "check" || it.anyDay || it.day === d.day)) return "use";
+    if (!it.day) return "active";
+    if (it.only === "telegram") return d.sre && d.sre.telegram ? "used" : "ready";
+    if (it.only === "web") return d.sre && d.sre.chatUrl ? "used" : "ready";
+    return it.day <= doneDay(d) ? "used" : "ready";
+  }
+  function stackRow(it, st, animate) {
+    return '<div class="sitem ' + st + '" style="--c:' + it.c + (animate ? "" : ";animation:none") + '"><div class="si">' + svg(it.i, it.c, 18) + "</div>" +
+      "<div><b>" + esc(it.n) + "</b><small>" + esc(it.d) + " · " + (it.day ? "Day " + it.day : "All 4 days") + "</small></div>" +
+      '<span class="ss">' + STACK_LABEL[st] + '</span><span class="pb"><i></i></span></div>';
+  }
+  function stackUse(kind) { stack.use = kind; renderStack(); }
+  function renderStack() {
+    var d = data;
+    if (!d || stack.state !== "done") return;
+    var items = STACK.map(function (it) { return { it: it, st: stackState(it, d) }; });
+    var used = items.filter(function (x) { return x.st === "used"; }).length;
+    var inUse = items.some(function (x) { return x.st === "use"; });
+    var next = Math.min(4, doneDay(d) + 1);
+    var shown = stack.open ? items : items.filter(function (x) { return inUse ? x.st === "use" : x.it.day === next && x.st !== "used"; }).slice(0, 6);
+    if (!shown.length) shown = items.slice(0, 4);
+    var html = shown.map(function (x) { return stackRow(x.it, x.st, false); }).join("");
+    if (html !== stack.html) { stack.html = html; $("stackList").innerHTML = html; }
+    $("stackTitle").textContent = "Your Tech Stack";
+    $("stackCount").textContent = STACK.length + " / " + STACK.length + " ready"; $("stackCount").classList.add("full");
+    $("stackBar").style.width = "100%";
+    $("stackSub").textContent = inUse ? "Your AI agents are using these right now — watch below."
+      : used ? used + " already used to build your business · up next: Day " + next
+      : "Everything your AI agents use to build your business.";
+    $("stackNote").textContent = "Nothing to install — your agents use these for you, live.";
+    $("stackBtn").textContent = stack.open ? "Show less" : "See all " + STACK.length;
+  }
+  function unpackStack() {
+    var tk = ++stack.token, i = 0;
+    stack.state = "playing"; stack.html = "";
+    vis("stackPanel", true);
+    $("stackTitle").textContent = "Unpacking your Tech Stack";
+    $("stackSub").textContent = STACK.length + " tools and resources your AI agents use to build your business.";
+    $("stackCount").textContent = "0 / " + STACK.length; $("stackCount").classList.remove("full");
+    $("stackBar").style.width = "0";
+    $("stackList").innerHTML = ""; $("stackNote").textContent = ""; $("stackBtn").textContent = "Skip";
+    $("stackPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+    (function next() {
+      if (tk !== stack.token) return;
+      if (i >= STACK.length) { setTimeout(function () { if (tk === stack.token) finishUnpack(); }, 1100); return; }
+      var it = STACK[i], n = ++i;
+      var holder = document.createElement("div"); holder.innerHTML = stackRow(it, "loading", true);
+      var row = holder.firstChild; $("stackList").appendChild(row);
+      requestAnimationFrame(function () { requestAnimationFrame(function () { row.querySelector(".pb i").style.width = "100%"; }); });
+      setTimeout(function () {
+        if (tk !== stack.token) return;
+        row.className = "sitem " + (it.day ? "ready" : "active"); row.querySelector(".ss").textContent = STACK_LABEL[it.day ? "ready" : "active"];
+        $("stackCount").textContent = n + " / " + STACK.length;
+        $("stackBar").style.width = (n / STACK.length * 100) + "%";
+      }, 720 / SPEED);
+      setTimeout(next, 380 / SPEED);
+    })();
+  }
+  function finishUnpack() {
+    stack.token++; stack.state = "done"; stack.html = "";
+    try { localStorage.setItem(stack.key, "1"); } catch (e) {}
+    renderStack();
+    load();
+  }
+  $("stackBtn").addEventListener("click", function () {
+    if (stack.state === "playing") return finishUnpack();
+    stack.open = !stack.open; renderStack();
+  });
 
   // ── Talking to the server ───────────────────────────────────────────────────
   function headers() {
@@ -1779,7 +1941,8 @@ details.alt[open] summary{margin-bottom:12px}
   // ── Account: sign up, log in, codes ─────────────────────────────────────────
   var codeEmail = "";
   function showAuth(msg) {
-    ["buildPanel", "pagesPanel", "day3Panel", "uploadPanel", "srePanel", "testPanel", "msgPanel", "infoPanel", "accessPanel", "finale", "journey", "logoutBtn"].forEach(function (id) { vis(id, false); });
+    stack.token++; stack.state = ""; stack.open = false; stack.use = null;
+    ["buildPanel", "pagesPanel", "day3Panel", "uploadPanel", "srePanel", "testPanel", "msgPanel", "infoPanel", "accessPanel", "finale", "journey", "stackPanel", "logoutBtn"].forEach(function (id) { vis(id, false); });
     vis("authPanel", true);
     $("hello").innerHTML = "Set up your business <span>in 4 days</span>";
     $("status").textContent = "Create your free account and watch AI agents build your sales assistant, your sales pages and your stores — live.";
